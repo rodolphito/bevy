@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 
 use super::Buffer;
 use crate::renderer::{RenderDevice, RenderQueue};
+use bytemuck::Pod;
 use encase::{
     internal::WriteInto, DynamicStorageBuffer as DynamicStorageBufferWrapper, ShaderType,
-    StorageBuffer as StorageBufferWrapper,
 };
 use wgpu::{util::BufferInitDescriptor, BindingResource, BufferBinding, BufferUsages};
 
@@ -28,20 +28,18 @@ use wgpu::{util::BufferInitDescriptor, BindingResource, BufferBinding, BufferUsa
 /// * [`Texture`](crate::render_resource::Texture)
 ///
 /// [std430 alignment/padding requirements]: https://www.w3.org/TR/WGSL/#address-spaces-storage
-pub struct StorageBuffer<T: ShaderType> {
-    value: T,
-    scratch: StorageBufferWrapper<Vec<u8>>,
+pub struct StorageBuffer<T: Pod> {
+    value: Vec<T>,
     buffer: Option<Buffer>,
     label: Option<String>,
     changed: bool,
     buffer_usage: BufferUsages,
 }
 
-impl<T: ShaderType> From<T> for StorageBuffer<T> {
-    fn from(value: T) -> Self {
+impl<T: Pod> From<Vec<T>> for StorageBuffer<T> {
+    fn from(value: Vec<T>) -> Self {
         Self {
             value,
-            scratch: StorageBufferWrapper::new(Vec::new()),
             buffer: None,
             label: None,
             changed: false,
@@ -50,11 +48,10 @@ impl<T: ShaderType> From<T> for StorageBuffer<T> {
     }
 }
 
-impl<T: ShaderType + Default> Default for StorageBuffer<T> {
+impl<T: Pod + Default> Default for StorageBuffer<T> {
     fn default() -> Self {
         Self {
-            value: T::default(),
-            scratch: StorageBufferWrapper::new(Vec::new()),
+            value: Vec::<T>::new(),
             buffer: None,
             label: None,
             changed: false,
@@ -63,7 +60,7 @@ impl<T: ShaderType + Default> Default for StorageBuffer<T> {
     }
 }
 
-impl<T: ShaderType + WriteInto> StorageBuffer<T> {
+impl<T: Pod + WriteInto> StorageBuffer<T> {
     #[inline]
     pub fn buffer(&self) -> Option<&Buffer> {
         self.buffer.as_ref()
@@ -76,15 +73,15 @@ impl<T: ShaderType + WriteInto> StorageBuffer<T> {
         ))
     }
 
-    pub fn set(&mut self, value: T) {
+    pub fn set(&mut self, value: Vec<T>) {
         self.value = value;
     }
 
-    pub fn get(&self) -> &T {
+    pub fn get(&self) -> &Vec<T> {
         &self.value
     }
 
-    pub fn get_mut(&mut self) -> &mut T {
+    pub fn get_mut(&mut self) -> &mut Vec<T> {
         &mut self.value
     }
 
@@ -118,20 +115,18 @@ impl<T: ShaderType + WriteInto> StorageBuffer<T> {
     /// If there is no GPU-side buffer allocated to hold the data currently stored, or if a GPU-side buffer previously
     /// allocated does not have enough capacity, a new GPU-side buffer is created.
     pub fn write_buffer(&mut self, device: &RenderDevice, queue: &RenderQueue) {
-        self.scratch.write(&self.value).unwrap();
-
         let capacity = self.buffer.as_deref().map(wgpu::Buffer::size).unwrap_or(0);
-        let size = self.scratch.as_ref().len() as u64;
+        let contents: &[u8] = bytemuck::cast_slice(self.value.as_slice());
 
-        if capacity < size || self.changed {
+        if capacity < contents.len() as u64 || self.changed {
             self.buffer = Some(device.create_buffer_with_data(&BufferInitDescriptor {
                 label: self.label.as_deref(),
                 usage: self.buffer_usage,
-                contents: self.scratch.as_ref(),
+                contents,
             }));
             self.changed = false;
         } else if let Some(buffer) = &self.buffer {
-            queue.write_buffer(buffer, 0, self.scratch.as_ref());
+            queue.write_buffer(buffer, 0, contents);
         }
     }
 }

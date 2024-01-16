@@ -8,6 +8,7 @@ use crate::{
 };
 use bevy_ecs::{prelude::Component, system::Resource};
 use bevy_utils::nonmax::NonMaxU32;
+use bytemuck::Pod;
 use encase::{private::WriteInto, ShaderSize, ShaderType};
 use std::marker::PhantomData;
 use wgpu::BindingResource;
@@ -30,12 +31,12 @@ impl<T: ShaderType + ShaderSize + WriteInto + Clone> GpuArrayBufferable for T {}
 /// * [`BufferVec`](crate::render_resource::BufferVec)
 /// * [`Texture`](crate::render_resource::Texture)
 #[derive(Resource)]
-pub enum GpuArrayBuffer<T: GpuArrayBufferable> {
+pub enum GpuArrayBuffer<T: GpuArrayBufferable + Pod> {
     Uniform(BatchedUniformBuffer<T>),
-    Storage(StorageBuffer<Vec<T>>),
+    Storage(StorageBuffer<T>),
 }
 
-impl<T: GpuArrayBufferable> GpuArrayBuffer<T> {
+impl<T: GpuArrayBufferable + Pod + Default> GpuArrayBuffer<T> {
     pub fn new(device: &RenderDevice) -> Self {
         let limits = device.limits();
         if limits.max_storage_buffers_per_shader_stage == 0 {

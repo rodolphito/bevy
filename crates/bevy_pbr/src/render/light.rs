@@ -20,6 +20,7 @@ use bevy_utils::{
     tracing::{error, warn},
     EntityHashMap,
 };
+use bytemuck::{Pod, Zeroable};
 use std::{hash::Hash, num::NonZeroU64, ops::Range};
 
 use crate::*;
@@ -51,7 +52,8 @@ pub struct ExtractedDirectionalLight {
     render_layers: RenderLayers,
 }
 
-#[derive(Copy, Clone, ShaderType, Default, Debug)]
+#[derive(Copy, Clone, ShaderType, Default, Debug, Pod, Zeroable)]
+#[repr(C)]
 pub struct GpuPointLight {
     // For point lights: the lower-right 2x2 values of the projection matrix [2][2] [2][3] [3][2] [3][3]
     // For spot lights: 2 components of the direction (x,z), spot_scale and spot_offset
@@ -85,7 +87,7 @@ pub struct GpuPointLightsStorage {
 
 pub enum GpuPointLights {
     Uniform(UniformBuffer<GpuPointLightsUniform>),
-    Storage(StorageBuffer<GpuPointLightsStorage>),
+    Storage(StorageBuffer<GpuPointLight>),
 }
 
 impl GpuPointLights {
@@ -113,8 +115,8 @@ impl GpuPointLights {
                 dst.copy_from_slice(src);
             }
             GpuPointLights::Storage(buffer) => {
-                buffer.get_mut().data.clear();
-                buffer.get_mut().data.append(&mut lights);
+                buffer.get_mut().clear();
+                buffer.get_mut().append(&mut lights);
             }
         }
     }
@@ -1289,8 +1291,8 @@ enum ViewClusterBuffers {
         cluster_offsets_and_counts: UniformBuffer<GpuClusterOffsetsAndCountsUniform>,
     },
     Storage {
-        cluster_light_index_lists: StorageBuffer<GpuClusterLightIndexListsStorage>,
-        cluster_offsets_and_counts: StorageBuffer<GpuClusterOffsetsAndCountsStorage>,
+        cluster_light_index_lists: StorageBuffer<u32>,
+        cluster_offsets_and_counts: StorageBuffer<UVec4>,
     },
 }
 
@@ -1351,8 +1353,8 @@ impl ViewClusterBindings {
                 cluster_offsets_and_counts,
                 ..
             } => {
-                cluster_light_index_lists.get_mut().data.clear();
-                cluster_offsets_and_counts.get_mut().data.clear();
+                cluster_light_index_lists.get_mut().clear();
+                cluster_offsets_and_counts.get_mut().clear();
             }
         }
     }
@@ -1377,7 +1379,7 @@ impl ViewClusterBindings {
                 cluster_offsets_and_counts,
                 ..
             } => {
-                cluster_offsets_and_counts.get_mut().data.push(UVec4::new(
+                cluster_offsets_and_counts.get_mut().push(UVec4::new(
                     offset as u32,
                     point_count as u32,
                     spot_count as u32,
@@ -1411,7 +1413,7 @@ impl ViewClusterBindings {
                 cluster_light_index_lists,
                 ..
             } => {
-                cluster_light_index_lists.get_mut().data.push(index as u32);
+                cluster_light_index_lists.get_mut().push(index as u32);
             }
         }
 

@@ -5,6 +5,7 @@ use bevy_ecs::{
     system::{Query, ResMut, StaticSystemParam, SystemParam, SystemParamItem},
 };
 use bevy_utils::nonmax::NonMaxU32;
+use bytemuck::Pod;
 
 use crate::{
     render_phase::{CachedRenderPipelinePhaseItem, DrawFunctionId, RenderPhase},
@@ -83,7 +84,9 @@ pub fn batch_and_prepare_render_phase<I: CachedRenderPipelinePhaseItem, F: GetBa
     mut views: Query<&mut RenderPhase<I>>,
     query: Query<F::Data, F::Filter>,
     param: StaticSystemParam<F::Param>,
-) {
+) where
+    F::BufferData: Pod + Default,
+{
     let gpu_array_buffer = gpu_array_buffer.into_inner();
     let system_param_item = param.into_inner();
 
@@ -124,7 +127,9 @@ pub fn write_batched_instance_buffer<F: GetBatchData>(
     render_device: Res<RenderDevice>,
     render_queue: Res<RenderQueue>,
     gpu_array_buffer: ResMut<GpuArrayBuffer<F::BufferData>>,
-) {
+) where
+    F::BufferData: Pod + Default,
+{
     let gpu_array_buffer = gpu_array_buffer.into_inner();
     gpu_array_buffer.write_buffer(&render_device, &render_queue);
     gpu_array_buffer.clear();

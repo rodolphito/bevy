@@ -9,13 +9,16 @@ use bevy_ecs::{
     schedule::IntoSystemConfigs,
     system::{Commands, Query, Res, ResMut},
 };
+use bytemuck::Pod;
 use std::marker::PhantomData;
 
 /// This plugin prepares the components of the corresponding type for the GPU
 /// by storing them in a [`GpuArrayBuffer`].
 pub struct GpuComponentArrayBufferPlugin<C: Component + GpuArrayBufferable>(PhantomData<C>);
 
-impl<C: Component + GpuArrayBufferable> Plugin for GpuComponentArrayBufferPlugin<C> {
+impl<C: Component + GpuArrayBufferable + Pod + Default> Plugin
+    for GpuComponentArrayBufferPlugin<C>
+{
     fn build(&self, app: &mut App) {
         if let Ok(render_app) = app.get_sub_app_mut(RenderApp) {
             render_app.add_systems(
@@ -40,13 +43,15 @@ impl<C: Component + GpuArrayBufferable> Default for GpuComponentArrayBufferPlugi
     }
 }
 
-fn prepare_gpu_component_array_buffers<C: Component + GpuArrayBufferable>(
+fn prepare_gpu_component_array_buffers<C: Component + GpuArrayBufferable + Pod>(
     mut commands: Commands,
     render_device: Res<RenderDevice>,
     render_queue: Res<RenderQueue>,
     mut gpu_array_buffer: ResMut<GpuArrayBuffer<C>>,
     components: Query<(Entity, &C)>,
-) {
+) where
+    C: Default,
+{
     gpu_array_buffer.clear();
 
     let entities = components
