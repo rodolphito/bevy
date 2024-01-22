@@ -8,7 +8,7 @@ use bevy_render::{
     render_graph::{NodeRunError, RenderGraphContext, ViewNode},
     render_resource::{
         BindGroup, BindGroupEntries, BufferId, LoadOp, Operations, PipelineCache,
-        RenderPassColorAttachment, RenderPassDescriptor, SamplerDescriptor, StoreOp, TextureViewId,
+        RenderPassColorAttachment, RenderPassDescriptor, StoreOp, TextureViewId,
     },
     renderer::RenderContext,
     texture::Image,

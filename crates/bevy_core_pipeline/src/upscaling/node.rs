@@ -5,7 +5,7 @@ use bevy_render::{
     render_graph::{NodeRunError, RenderGraphContext, ViewNode},
     render_resource::{
         BindGroup, BindGroupEntries, LoadOp, Operations, PipelineCache, RenderPassColorAttachment,
-        RenderPassDescriptor, SamplerDescriptor, StoreOp, TextureViewId,
+        RenderPassDescriptor, StoreOp, TextureViewId,
     },
     renderer::RenderContext,
     view::ViewTarget,
