@@ -29,7 +29,8 @@ fn draw_cursor(
     };
 
     // Calculate if and where the ray is hitting the ground plane.
-    let Some(distance) = ray.intersect_plane(ground.translation(), ground.up()) else {
+    let Some(distance) = ray.intersect_plane(ground.translation(), Plane3d::new(ground.up()))
+    else {
         return;
     };
     let point = ray.get_point(distance);
@@ -49,8 +50,8 @@ fn setup(
     // plane
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(shape::Plane::from_size(20.).into()),
-            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            mesh: meshes.add(shape::Plane::from_size(20.)),
+            material: materials.add(Color::rgb(0.3, 0.5, 0.3)),
             ..default()
         },
         Ground,
@@ -59,6 +60,10 @@ fn setup(
     // light
     commands.spawn(DirectionalLightBundle {
         transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
+        directional_light: DirectionalLight {
+            illuminance: 2000.0,
+            ..default()
+        },
         ..default()
     });
 
