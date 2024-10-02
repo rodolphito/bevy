@@ -229,6 +229,16 @@ impl<'a> AssetPath<'a> {
         }
     }
 
+    /// Creates a new [`AssetPath`] from a [`Path`].
+    #[inline]
+    pub fn from_path_buf(path_buf: PathBuf) -> AssetPath<'a> {
+        AssetPath {
+            path: CowArc::Owned(path_buf.into()),
+            source: AssetSourceId::Default,
+            label: None,
+        }
+    }
+
     /// Gets the "asset source", if one was defined. If none was defined, the default source
     /// will be used.
     #[inline]

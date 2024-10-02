@@ -66,6 +66,11 @@ pub mod prelude {
     };
 }
 
+#[doc(hidden)]
+pub mod _macro {
+    pub use bevy_asset;
+}
+
 use batching::gpu_preprocessing::BatchingPlugin;
 use bevy_ecs::schedule::ScheduleBuildSettings;
 use bevy_utils::prelude::default;
@@ -99,6 +104,25 @@ use bevy_ecs::{prelude::*, schedule::ScheduleLabel, system::SystemState};
 use bevy_utils::tracing::debug;
 use core::ops::{Deref, DerefMut};
 use std::sync::Mutex;
+
+// TODO: this should be replaced by proper asset handling in the shader loader.
+/// Inline shader as an `embedded_asset` and load it permanently.
+///
+/// This works around a limitation of the shader loader not properly loading
+/// dependencies of shaders.
+#[macro_export]
+macro_rules! load_and_forget_shader {
+    ($asset_server_provider: expr, $path: literal $(, $settings: expr)?) => {
+        $crate::_macro::bevy_asset::embedded_asset!($asset_server_provider, $path);
+        let handle: $crate::_macro::bevy_asset::prelude::Handle<$crate::prelude::Shader> =
+            $crate::_macro::bevy_asset::load_embedded_asset!(
+                $asset_server_provider,
+                $path
+                $(,$settings)?
+            );
+        std::mem::forget(handle);
+    }
+}
 
 /// Contains the default Bevy rendering backend based on wgpu.
 ///
