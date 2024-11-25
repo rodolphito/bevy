@@ -1,7 +1,7 @@
 #ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
-@group(0) @binding(0) var<storage, read> mip_0: array<u64>; // Per pixel
+@group(0) @binding(0) var mip_0: texture_storage_2d<r64uint, read>; // Per pixel
 #else
-@group(0) @binding(0) var<storage, read> mip_0: array<u32>; // Per pixel
+@group(0) @binding(0) var mip_0: texture_storage_2d<r32uint, read>; // Per pixel
 #endif
 @group(0) @binding(1) var mip_1: texture_storage_2d<r32float, write>;
 @group(0) @binding(2) var mip_2: texture_storage_2d<r32float, write>;
@@ -301,11 +301,10 @@ fn reduce_load_mip_6(tex: vec2u) -> f32 {
 }
 
 fn load_mip_0(x: u32, y: u32) -> f32 {
-    let i = y * constants.view_width + x;
 #ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
-    return bitcast<f32>(u32(mip_0[i] >> 32u));
+    return bitcast<f32>(u32(textureLoad(mip_0, vec2(x, y)).x >> 32u));
 #else
-    return bitcast<f32>(mip_0[i]);
+    return bitcast<f32>(textureLoad(mip_0, vec2(x, y)).x);
 #endif
 }
 
