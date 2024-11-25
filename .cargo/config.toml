@@ -1,0 +1,25 @@
+
+[patch.crates-io.naga]
+git = "https://github.com/atlv24/wgpu"
+rev = "67e02c38c31680c7405adaa48b83266bce4cdc98"
+#path = "../wgpu/naga"
+
+[patch."https://github.com/gfx-rs/naga".naga]
+git = "https://github.com/atlv24/wgpu"
+rev = "67e02c38c31680c7405adaa48b83266bce4cdc98"
+#path = "../wgpu/naga"
+
+[patch.crates-io.wgpu]
+git = "https://github.com/atlv24/wgpu"
+rev = "67e02c38c31680c7405adaa48b83266bce4cdc98"
+#path = "../wgpu/wgpu"
+
+[patch.crates-io.wgpu-types]
+git = "https://github.com/atlv24/wgpu"
+rev = "67e02c38c31680c7405adaa48b83266bce4cdc98"
+#path = "../wgpu/wgpu-types"
+
+[patch.crates-io.naga_oil]
+git = "https://github.com/atlv24/naga_oil"
+rev = "5f6e626d5f7df4d4c383a247ce71530aa0b00242"
+#path = "../naga_oil"
