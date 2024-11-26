@@ -92,6 +92,7 @@ impl Node for MeshletVisibilityBufferRasterPassNode {
             resolve_depth_pipeline,
             resolve_depth_shadow_view_pipeline,
             resolve_material_depth_pipeline,
+            resolve_material_depth_pipeline_32,
             remap_1d_to_2d_dispatch_pipeline,
         )) = MeshletPipelines::get(world)
         else {
@@ -112,6 +113,10 @@ impl Node for MeshletVisibilityBufferRasterPassNode {
             &meshlet_view_resources.second_pass_candidates_buffer,
             0,
             None,
+        );
+        render_context.command_encoder().clear_texture(
+            &meshlet_view_resources.visibility_buffer.texture,
+            &ImageSubresourceRange::default(),
         );
         if first_node {
             fill_cluster_buffers_pass(
@@ -198,7 +203,11 @@ impl Node for MeshletVisibilityBufferRasterPassNode {
             render_context,
             meshlet_view_resources,
             meshlet_view_bind_groups,
-            resolve_material_depth_pipeline,
+            if meshlet_view_resources.material_depth.is_some() {
+                resolve_material_depth_pipeline
+            } else {
+                resolve_material_depth_pipeline_32
+            },
             camera,
         );
         downsample_depth(
@@ -245,6 +254,10 @@ impl Node for MeshletVisibilityBufferRasterPassNode {
                 &meshlet_view_resources.second_pass_candidates_buffer,
                 0,
                 None,
+            );
+            render_context.command_encoder().clear_texture(
+                &meshlet_view_resources.visibility_buffer.texture,
+                &ImageSubresourceRange::default(),
             );
             cull_pass(
                 "culling_first",

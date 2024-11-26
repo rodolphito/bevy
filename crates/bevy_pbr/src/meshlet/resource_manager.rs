@@ -54,7 +54,9 @@ pub struct ResourceManager {
     pub visibility_buffer_raster_bind_group_layout_32: BindGroupLayout,
     pub downsample_depth_bind_group_layout_32: BindGroupLayout,
     pub resolve_depth_bind_group_layout: BindGroupLayout,
+    pub resolve_depth_bind_group_layout_32: BindGroupLayout,
     pub resolve_material_depth_bind_group_layout: BindGroupLayout,
+    pub resolve_material_depth_bind_group_layout_32: BindGroupLayout,
     pub material_shade_bind_group_layout: BindGroupLayout,
     pub remap_1d_to_2d_dispatch_bind_group_layout: Option<BindGroupLayout>,
 }
@@ -243,7 +245,14 @@ impl ResourceManager {
                 "meshlet_resolve_depth_bind_group_layout",
                 &BindGroupLayoutEntries::single(
                     ShaderStages::FRAGMENT,
-                    storage_buffer_read_only_sized(false, None),
+                    texture_storage_2d(TextureFormat::R64Uint, StorageTextureAccess::ReadOnly),
+                ),
+            ),
+            resolve_depth_bind_group_layout_32: render_device.create_bind_group_layout(
+                "meshlet_resolve_depth_bind_group_layout",
+                &BindGroupLayoutEntries::single(
+                    ShaderStages::FRAGMENT,
+                    texture_storage_2d(TextureFormat::R32Uint, StorageTextureAccess::ReadOnly),
                 ),
             ),
             resolve_material_depth_bind_group_layout: render_device.create_bind_group_layout(
@@ -251,7 +260,18 @@ impl ResourceManager {
                 &BindGroupLayoutEntries::sequential(
                     ShaderStages::FRAGMENT,
                     (
+                        texture_storage_2d(TextureFormat::R64Uint, StorageTextureAccess::ReadOnly),
                         storage_buffer_read_only_sized(false, None),
+                        storage_buffer_read_only_sized(false, None),
+                    ),
+                ),
+            ),
+            resolve_material_depth_bind_group_layout_32: render_device.create_bind_group_layout(
+                "meshlet_resolve_material_depth_bind_group_layout",
+                &BindGroupLayoutEntries::sequential(
+                    ShaderStages::FRAGMENT,
+                    (
+                        texture_storage_2d(TextureFormat::R32Uint, StorageTextureAccess::ReadOnly),
                         storage_buffer_read_only_sized(false, None),
                         storage_buffer_read_only_sized(false, None),
                     ),
@@ -262,7 +282,7 @@ impl ResourceManager {
                 &BindGroupLayoutEntries::sequential(
                     ShaderStages::FRAGMENT,
                     (
-                        storage_buffer_read_only_sized(false, None),
+                        texture_storage_2d(TextureFormat::R64Uint, StorageTextureAccess::ReadOnly),
                         storage_buffer_read_only_sized(false, None),
                         storage_buffer_read_only_sized(false, None),
                         storage_buffer_read_only_sized(false, None),
@@ -797,7 +817,11 @@ pub fn prepare_meshlet_view_bind_groups(
 
         let resolve_depth = render_device.create_bind_group(
             "meshlet_resolve_depth_bind_group",
-            &resource_manager.resolve_depth_bind_group_layout,
+            if view_resources.material_depth.is_some() {
+                &resource_manager.resolve_depth_bind_group_layout
+            } else {
+                &resource_manager.resolve_depth_bind_group_layout_32
+            },
             &BindGroupEntries::single(&view_resources.visibility_buffer.default_view),
         );
 
