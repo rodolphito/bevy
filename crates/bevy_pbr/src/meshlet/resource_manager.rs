@@ -523,9 +523,7 @@ pub fn prepare_meshlet_per_frame_resources(
                 } else {
                     TextureFormat::R32Uint
                 },
-                usage: TextureUsages::STORAGE_BINDING
-                    | TextureUsages::TEXTURE_BINDING
-                    | TextureUsages::SHADER_ATOMIC,
+                usage: TextureUsages::STORAGE_BINDING | TextureUsages::SHADER_ATOMIC,
                 view_formats: &[],
             },
         );
